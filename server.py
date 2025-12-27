@@ -5,7 +5,7 @@ import os
 from telegram import Update
 from telegram.ext import Application
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = os.getenv("8556741893:AAGS-ZNqsqNBYuRLXGI8URWAdXTekdUNBY0")
 
 app = FastAPI()
 telegram_app = Application.builder().token(BOT_TOKEN).build()
