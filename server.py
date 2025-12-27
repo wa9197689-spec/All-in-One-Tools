@@ -1,19 +1,19 @@
+import os
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-import os
 from telegram import Update
 from telegram.ext import Application
 
-BOT_TOKEN = os.getenv("8556741893:AAGS-ZNqsqNBYuRLXGI8URWAdXTekdUNBY0")
-
-app = FastAPI()
-telegram_app = Application.builder().token(BOT_TOKEN).build()
+# ================= CONFIG =================
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
-# Serve downloaded files
+# ================= FASTAPI =================
+app = FastAPI()
+
 app.mount("/files", StaticFiles(directory=DOWNLOAD_DIR), name="files")
 
 @app.get("/")
@@ -21,7 +21,9 @@ app.mount("/files", StaticFiles(directory=DOWNLOAD_DIR), name="files")
 def home():
     return {"status": "Server running"}
 
-# ✅ TELEGRAM WEBHOOK ENDPOINT
+# ================= TELEGRAM =================
+telegram_app = Application.builder().token(BOT_TOKEN).build()
+
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
     data = await request.json()
@@ -29,6 +31,7 @@ async def telegram_webhook(request: Request):
     await telegram_app.process_update(update)
     return {"ok": True}
 
+# ================= DOWNLOAD =================
 @app.get("/download/{filename}")
 def download_file(filename: str):
     file_path = os.path.join(DOWNLOAD_DIR, filename)
