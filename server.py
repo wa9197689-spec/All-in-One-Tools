@@ -1,35 +1,35 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 import os
+from telegram import Update
+from telegram.ext import Application
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 app = FastAPI()
+telegram_app = Application.builder().token(BOT_TOKEN).build()
 
 DOWNLOAD_DIR = "downloads"
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
-# ✅ Ensure downloads folder exists (IMPORTANT)
-if not os.path.exists(DOWNLOAD_DIR):
-    os.makedirs(DOWNLOAD_DIR)
-
-# ✅ Serve files
+# Serve downloaded files
 app.mount("/files", StaticFiles(directory=DOWNLOAD_DIR), name="files")
 
-# ✅ ROOT + HEAD FIX (UptimeRobot issue solved)
 @app.get("/")
 @app.head("/")
 def home():
     return {"status": "Server running"}
 
-# ✅ Download endpoint
+# ✅ TELEGRAM WEBHOOK ENDPOINT
+@app.post("/webhook")
+async def telegram_webhook(request: Request):
+    data = await request.json()
+    update = Update.de_json(data, telegram_app.bot)
+    await telegram_app.process_update(update)
+    return {"ok": True}
+
 @app.get("/download/{filename}")
 def download_file(filename: str):
     file_path = os.path.join(DOWNLOAD_DIR, filename)
-
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="File not found")
-
-    return FileResponse(
-        path=file_path,
-        filename=filename,
-        media_type="application/octet-stream"
-    )
+    return FileResponse(file_path)
